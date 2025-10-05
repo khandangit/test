@@ -1,0 +1,21 @@
+﻿# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Rapp.history
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+env/
+venv/
+.ipynb_checkpoints/
+
+# Common
+.DS_Store
+Thumbs.db
+*.log
+.env
