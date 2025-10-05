@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Risk Matrix — Entry • Exposure • Establishment • Impact • Overall</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+        :root {
+            --gap: 16px;
+            --card-bg: #1a1f2b;
+            --ink: #e0e6ff;
+            --muted: #7b89a3;
+            --soft: #2a3142;
+            --accent: #6b5eff;
+            --glow: #8a7cff;
+            --gradient: linear-gradient(135deg, #6b5eff, #ff6b6b);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 32px;
+            background: var(--gradient);
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.5s ease;
+        }
+
+        h2 {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--glow);
+            text-shadow: 0 0 8px rgba(107, 94, 255, 0.5);
+        }
+
+        .wrap {
+            width: min(1400px, 100%);
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: var(--gap);
+            align-items: stretch;
+        }
+
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap);
+            align-self: stretch;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+            min-height: 200px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .controls {
+            display: grid;
+            gap: 12px;
+        }
+
+        .controls .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        label {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            /* Keep selects level even when labels wrap */
+            display: block;
+            min-height: 28px;
+        }
+
+        select,
+        input[type="range"] {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 10px;
+            background: var(--soft);
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        select:hover,
+        input[type="range"]:hover {
+            background: #3a4256;
+            transform: scale(1.02);
+        }
+
+        .btns {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 10px;
+            background: var(--soft);
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.4s ease;
+        }
+
+        button:hover::before {
+            left: 100%;
+        }
+
+        button:hover {
+            background: var(--accent);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(107, 94, 255, 0.5);
+        }
+
+        #playBtn {
+            background: #2ecc71;
+        }
+
+        #playBtn:hover {
+            background: #25b863;
+        }
+
+        #recWebmBtn {
+            background: #2962ff;
+        }
+
+        #recWebmBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #status {
+            font-size: 12px;
+            color: #fff;
+            padding: 6px 12px;
+            background: var(--accent);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(107, 94, 255, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        .ratings {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .ratings .item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .canvas-card {
+            padding: 0;
+            overflow: visible;
+            align-self: stretch;
+            background: var(--card-bg);
+            min-height: 400px;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(107, 94, 255, 0.2);
+            background: #232a3b;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .info {
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: var(--card-bg);
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-weight: 700;
+            background: var(--accent);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(107, 94, 255, 0.4);
+            transition: transform 0.3s ease;
+        }
+
+        .pill:hover {
+            transform: scale(1.05);
+        }
+
+        .disclaimer-card {
+            font-size: 13px;
+            line-height: 1.45;
+            color: var(--muted);
+        }
+
+        .disclaimer-card strong {
+            color: var(--ink);
+        }
+
+        .disclaimer-card .credit {
+            margin-top: 10px;
+            font-weight: bold;
+            color: var(--glow);
+            text-align: left;
+        }
+
+        .disclaimer-card .credit a {
+            color: var(--glow);
+            text-decoration: underline;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 10px rgba(107, 94, 255, 0.3); }
+            50% { box-shadow: 0 0 20px rgba(107, 94, 255, 0.6); }
+            100% { box-shadow: 0 0 10px rgba(107, 94, 255, 0.3); }
+        }
+
+        @media (max-width: 980px) {
+            .wrap { grid-template-columns: 1fr; }
+            .ratings { grid-template-columns: 1fr; }
+            body { padding: 16px; }
+            .canvas-card { min-height: 300px; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="left-col">
+            <div class="card">
+                <h2>Controls</h2>
+                <div class="controls">
+                    <div class="row">
+                        <div>
+                            <label>Shape</label>
+                            <select id="shapeSel">
+                                <option>Bug</option>
+                                <option>Virus</option>
+                                <option>Spore</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label>Speed (faster → slower)</label>
+                            <input id="speed" type="range" min="30" max="200" step="5" value="110">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div>
+                            <label>Min size</label>
+                            <input id="sizeMin" type="range" min="6" max="40" step="1" value="10">
+                        </div>
+                        <div>
+                            <label>Max size</label>
+                            <input id="sizeMax" type="range" min="30" max="200" step="1" value="150">
+                        </div>
+                    </div>
+                    <div class="btns">
+                        <button id="playBtn">Play</button>
+                        <button id="pauseBtn">Pause</button>
+                        <button id="recWebmBtn" title="Record WebM">Record WebM</button>
+                        <span id="status">Idle</span>
+                    </div>
+                </div>
+                <h2 style="margin-top: 16px;">Ratings</h2>
+                <div class="ratings">
+                    <div class="item">
+                        <label>Entry</label>
+                        <select id="entrySel">
+                            <option>High</option>
+                            <option selected>Moderate</option>
+                            <option>Low</option>
+                            <option>Very Low</option>
+                            <option>Negligible</option>
+                        </select>
+                    </div>
+                    <div class="item">
+                        <label>Exposure</label>
+                        <select id="exposureSel">
+                            <option>High</option>
+                            <option>Moderate</option>
+                            <option selected>Low</option>
+                            <option>Very Low</option>
+                            <option>Negligible</option>
+                        </select>
+                    </div>
+                    <div class="item">
+                        <label>Establishment</label>
+                        <select id="estabSel">
+                            <option>High</option>
+                            <option selected>Moderate</option>
+                            <option>Low</option>
+                            <option>Very Low</option>
+                            <option>Negligible</option>
+                        </select>
+                    </div>
+                    <div class="item">
+                        <label>Impact (Consequence)</label>
+                        <select id="econSel">
+                            <option>Very High</option>
+                            <option>High</option>
+                            <option selected>Moderate</option>
+                            <option>Low</option>
+                            <option>Very Low</option>
+                            <option>Negligible</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card disclaimer-card">
+                <p><strong>Disclaimer:</strong> This animation is based on one specific matrix developed in New Zealand.
+                    Each country may have its own risk assessment frameworks or rating systems, which can differ from
+                    what is shown here.</p>
+                <div class="credit">
+                    Developed by
+                    <a href="https://www.linkedin.com/in/hossein-narouei-khandan/" target="_blank"
+                        rel="noopener noreferrer" aria-label="Hossein Narouei K. Hadnan on LinkedIn">
+                        Hossein Narouei K. Hadnan
+                    </a>
+                    &middot; <a href="mailto:khandangit@gmail.com">khandangit@gmail.com</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card canvas-card">
+            <div class="header">
+                <div class="info">
+                    <span id="likeInfo" class="pill">Combined likelihood: —</span>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                        Sum of Entry, Exposure, and Establishment
+                    </div>
+                    &nbsp;&nbsp;
+                    <span id="riskInfo" class="pill">Overall risk: —</span>
+                    <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">
+                        Sum of Combined Likelihood and Impact
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const TXT = { tick: 15, bubble: 18 };
+
+        const TABLE_5_4 = {
+            "Negligible": { "Negligible": "Negligible", "Very Low": "Negligible", "Low": "Negligible", "Moderate": "Negligible", "High": "Negligible" },
+            "Very Low":  { "Negligible": "Negligible", "Very Low": "Negligible", "Low": "Very Low", "Moderate": "Very Low", "High": "Low" },
+            "Low":       { "Negligible": "Negligible", "Very Low": "Very Low", "Low": "Very Low", "Moderate": "Low", "High": "Moderate" },
+            "Moderate":  { "Negligible": "Negligible", "Very Low": "Very Low", "Low": "Low", "Moderate": "Moderate", "High": "Moderate" },
+            "High":      { "Negligible": "Negligible", "Very Low": "Low", "Low": "Moderate", "Moderate": "Moderate", "High": "High" }
+        };
+        function combine2(a, b) { return TABLE_5_4[a][b]; }
+        function combine3(entry, exposure, establishment) { return combine2(combine2(entry, exposure), establishment); }
+
+        const TABLE_5_6 = {
+            "Negligible":        { "Negligible": "Negligible", "Very Low": "Negligible", "Low": "Negligible", "Moderate": "Negligible", "High": "Negligible", "Very High": "Negligible" },
+            "Exceptionally Low": { "Negligible": "Not Applicable", "Very Low": "Not Applicable", "Low": "Not Applicable", "Moderate": "Negligible", "High": "Very Low", "Very High": "Very Low" },
+            "Very Very Low":     { "Negligible": "Not Applicable", "Very Low": "Not Applicable", "Low": "Not Applicable", "Moderate": "Very Low", "High": "Low", "Very High": "Low" },
+            "Very Low":          { "Negligible": "Negligible", "Very Low": "Negligible", "Low": "Very Low", "Moderate": "Low", "High": "Low", "Very High": "Moderate" },
+            "Low":               { "Negligible": "Negligible", "Very Low": "Very Low", "Low": "Low", "Moderate": "Moderate", "High": "Moderate", "Very High": "High" },
+            "Moderate":          { "Negligible": "Negligible", "Very Low": "Very Low", "Low": "Low", "Moderate": "Moderate", "High": "High", "Very High": "Very High" },
+            "High":              { "Negligible": "Negligible", "Very Low": "Very Low", "Low": "Low", "Moderate": "Moderate", "High": "High", "Very High": "Very High" }
+        };
+        function overallRisk(like, impact) {
+            return TABLE_5_6[like] && TABLE_5_6[like][impact] ? TABLE_5_6[like][impact] : "Not Applicable";
+        }
+
+        // ===== Unified size scale for shared labels =====
+        const BASE_FRAC = {
+            "Negligible": 0.15,
+            "Very Low":   0.30,
+            "Low":        0.45,
+            "Moderate":   0.65,
+            "High":       0.85,
+            "Very High":  1.00
+        };
+
+        const likeToFrac   = lvl => BASE_FRAC[lvl] ?? BASE_FRAC["Negligible"];
+        const impactToFrac = imp => BASE_FRAC[imp] ?? BASE_FRAC["Negligible"];
+        const riskToFrac   = risk => {
+            const extras = { "Very Very Low": 0.20, "Exceptionally Low": 0.15, "Not Applicable": 0.12 };
+            return BASE_FRAC[risk] ?? extras[risk] ?? 0.12;
+        };
+        // ===============================================
+
+        const CANVAS_ASPECT = 440 / 1150;
+
+        function getCanvasSize() {
+            const card = document.querySelector('.canvas-card');
+            const header = document.querySelector('.canvas-card .header');
+            const bodyPadding = parseInt(getComputedStyle(document.body).paddingTop) + parseInt(getComputedStyle(document.body).paddingBottom);
+            const w = Math.max(320, Math.floor(card.clientWidth));
+            const viewportMaxH = window.innerHeight - bodyPadding - (header?.offsetHeight || 0) - 40;
+            const idealH = Math.round(w * CANVAS_ASPECT);
+            const h = Math.max(260, Math.min(idealH, viewportMaxH));
+            return { w, h };
+        }
+
+        let shapeSel, speedSlider, sMinSlider, sMaxSlider;
+        let entrySel, exposureSel, estabSel, econSel;
+        let playBtn, pauseBtn, statusEl, recWebmBtn;
+        let likeInfo, riskInfo;
+
+        let t = 0;
+        let paused = false, finished = false;
+
+        let canvasEl = null, capturing = false, mediaRecorder = null, webmChunks = [];
+
+        let particles = [];
+        class Particle {
+            constructor(x, y) {
+                this.x = x; this.y = y;
+                this.vx = random(-1, 1); this.vy = random(-1, 1);
+                this.size = random(2, 6);
+                this.alpha = 255;
+                this.life = random(30, 60);
+            }
+            update() { this.x += this.vx; this.y += this.vy; this.life--; }
+            draw() { noStroke(); fill(107, 94, 255, this.alpha); circle(this.x, this.y, this.size); }
+        }
+
+        let virusImg = null;
+        function preload() {
+            try { virusImg = loadImage('virus.png', () => { }, () => { virusImg = null; }); }
+            catch (e) { virusImg = null; }
+        }
+
+        function setup() {
+            setAttributes({ alpha: false });
+
+            const { w, h } = getCanvasSize();
+            const cnv = createCanvas(w, h);
+            cnv.canvas.style.display = 'block';
+            document.querySelector('.canvas-card').appendChild(cnv.canvas);
+            canvasEl = cnv.canvas;
+
+            pixelDensity(1);
+            noStroke();
+            textFont('Arial', 12);
+
+            background(26, 31, 43);
+
+            // Wire UI
+            shapeSel = document.getElementById('shapeSel');
+            speedSlider = document.getElementById('speed');
+            sMinSlider = document.getElementById('sizeMin');
+            sMaxSlider = document.getElementById('sizeMax');
+            entrySel = document.getElementById('entrySel');
+            exposureSel = document.getElementById('exposureSel');
+            estabSel = document.getElementById('estabSel');
+            econSel = document.getElementById('econSel');
+            playBtn = document.getElementById('playBtn');
+            pauseBtn = document.getElementById('pauseBtn');
+            statusEl = document.getElementById('status');
+            recWebmBtn = document.getElementById('recWebmBtn');
+            likeInfo = document.getElementById('likeInfo');
+            riskInfo = document.getElementById('riskInfo');
+
+            playBtn.onclick = () => restart();
+            pauseBtn.onclick = () => { if (!finished) { paused = !paused; setStatus(paused ? 'Paused' : 'Playing'); } };
+            recWebmBtn.onclick = () => startRecordingWebM();
+
+            setStatus('Idle');
+
+            gsap.from(".left-col .card, .canvas-card .header", {
+                duration: 0.4,
+                opacity: 0,
+                stagger: 0.08,
+                ease: "power2.out"
+            });
+
+            loop();
+        }
+
+        function windowResized() {
+            const { w, h } = getCanvasSize();
+            resizeCanvas(w, h);
+        }
+
+        function restart() { t = 0; paused = false; finished = false; setStatus('Playing'); loop(); }
+        function setStatus(msg) { statusEl.textContent = msg; }
+
+        function startRecordingWebM() {
+            if (capturing) return;
+            restart();
+            const stream = canvasEl.captureStream(30);
+            webmChunks = [];
+            try { mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' }); }
+            catch (e) { mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); }
+            mediaRecorder.ondataavailable = e => { if (e.data && e.data.size) webmChunks.push(e.data); };
+            mediaRecorder.onstop = async () => {
+                const blob = new Blob(webmChunks, { type: 'video/webm' });
+                await saveBlobWithDialog(blob, 'risk_pathway_nz.webm', 'video/webm');
+                setStatus('Saved WebM ✅');
+                mediaRecorder = null;
+                recWebmBtn.disabled = false;
+                capturing = false;
+            };
+            mediaRecorder.start();
+            capturing = true;
+            recWebmBtn.disabled = true;
+            setStatus('Recording WebM…');
+        }
+
+        function draw() {
+            background(26, 31, 43);
+
+            if (!paused && random() < 0.3) particles.push(new Particle(random(width), random(height)));
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => { p.update(); p.draw(); });
+
+            const MAX_S = Number(sMaxSlider.value);
+            const margin = MAX_S / 2 + 28;
+            const X0 = margin;
+            const X4 = width - margin;
+            const X1 = X0 + (X4 - X0) * 0.25;
+            const X2 = X0 + (X4 - X0) * 0.50;
+            const X3 = X0 + (X4 - X0) * 0.75;
+            const Y = height / 2 + 10;
+
+            stroke(107, 94, 255); strokeWeight(3);
+            line(X0, Y, X4, Y);
+            [X0, X1, X2, X3, X4].forEach(x => {
+                line(x, Y - 10, x, Y + 10);
+                noStroke(); fill(107, 94, 255); circle(x, Y, 12);
+            });
+            noStroke();
+
+            textSize(TXT.tick);
+            fill(224, 230, 255); textAlign(CENTER);
+            text('Entry', X0, Y + 28);
+            text('Exposure', X1, Y + 28);
+            text('Establishment', X2, Y + 28);
+            text('Impact', X3, Y + 28);
+            text('Overall', X4, Y + 28);
+
+            const S_MIN = Number(sMinSlider.value), S_MAX = Number(sMaxSlider.value);
+            const entryLike = entrySel.value;
+            const exposureLike = exposureSel.value;
+            const estabLike = estabSel.value;
+            const combinedLike = combine3(entryLike, exposureLike, estabLike);
+            const impact = econSel.value;
+            const risk = overallRisk(combinedLike, impact);
+
+            likeInfo.textContent = `Combined likelihood: ${combinedLike}`;
+            riskInfo.textContent = `Overall risk: ${risk}`;
+
+            const sz = frac => S_MIN + (S_MAX - S_MIN) * Math.max(0, Math.min(1, frac));
+            const sEntry  = sz(likeToFrac(entryLike));
+            const sExpos  = sz(likeToFrac(exposureLike));
+            const sEstab  = sz(likeToFrac(estabLike));
+            const sImpact = sz(impactToFrac(impact));
+            const sOverall= sz(riskToFrac(risk));
+
+            if (!paused && !finished) {
+                const speedDiv = Number(speedSlider.value);
+                t += (1 / speedDiv);
+                if (t >= 4) {
+                    t = 4;
+                    finished = true;
+                    setStatus('Finished');
+                    if (capturing && mediaRecorder) mediaRecorder.stop();
+                    else if (!capturing) noLoop();
+                }
+            }
+
+            let x, s, label;
+            if (t <= 1)      { x = map(t, 0, 1, X0, X1); s = lerp(sEntry,  sExpos,   t);     label = entryLike; }
+            else if (t <= 2) { x = map(t, 1, 2, X1, X2); s = lerp(sExpos,  sEstab,   t - 1); label = exposureLike; }
+            else if (t <= 3) { x = map(t, 2, 3, X2, X3); s = lerp(sEstab,  sImpact,  t - 2); label = estabLike; }
+            else             { x = map(t, 3, 4, X3, X4); s = lerp(sImpact, sOverall, t - 3); label = (t === 4) ? risk : impact; }
+
+            const col = colourForSize(s, S_MIN, S_MAX);
+            fill(col.fill[0], col.fill[1], col.fill[2]);
+            stroke(col.stroke[0], col.stroke[1], col.stroke[2]); strokeWeight(2);
+
+            drawingContext.shadowBlur = 15;
+            drawingContext.shadowColor = `rgba(${col.fill[0]}, ${col.fill[1]}, ${col.fill[2]}, 0.5)`;
+            drawMarker(shapeSel.value, x, Y, s);
+            drawingContext.shadowBlur = 0;
+
+            push();
+            textSize(TXT.bubble);
+            const bold = label;
+            const tw = textWidth(bold) + 16, th = 24;
+            textAlign(CENTER, BOTTOM);
+            noStroke(); fill(26, 31, 43); rectMode(CENTER);
+            rect(x, Y - s - 24, tw, th, 10);
+            fill(224, 230, 255); textStyle(BOLD); text(bold, x, Y - s - 10); textStyle(NORMAL);
+            pop();
+
+            drawNodePreview(X0, Y, sEntry);
+            drawNodePreview(X1, Y, sExpos);
+            drawNodePreview(X2, Y, sEstab);
+            drawNodePreview(X3, Y, sImpact);
+            drawNodePreview(X4, Y, sOverall);
+        }
+
+        function drawNodePreview(x, y, s) {
+            push();
+            noStroke();
+            fill(107, 94, 255);
+            drawingContext.shadowBlur = 10;
+            drawingContext.shadowColor = 'rgba(107, 94, 255, 0.5)';
+            circle(x, y - 26, Math.max(10, Math.min(20, s)));
+            drawingContext.shadowBlur = 0;
+            pop();
+        }
+
+        function colourForSize(s, smin, smax) {
+            const u0 = (s - smin) / (smax - smin + 1e-6);
+            let u = Math.max(0, Math.min(1, u0));
+            const L = (a, b, t) => Math.round(a + (b - a) * t);
+            const c1 = { fill: [80, 140, 255], stroke: [40, 90, 210] };
+            const c2 = { fill: [255, 165, 60], stroke: [210, 120, 40] };
+            const c3 = { fill: [235, 87, 87], stroke: [200, 60, 60] };
+            let f, g;
+            if (u < 0.5) { f = c1; g = c2; u = u / 0.5; } else { f = c2; g = c3; u = (u - 0.5) / 0.5; }
+            return {
+                fill:   [L(f.fill[0],   g.fill[0],   u), L(f.fill[1],   g.fill[1],   u), L(f.fill[2],   g.fill[2],   u)],
+                stroke: [L(f.stroke[0], g.stroke[0], u), L(f.stroke[1], g.stroke[1], u), L(f.stroke[2], g.stroke[2], u)]
+            };
+        }
+
+        function drawMarker(type, x, y, s) {
+            push(); noStroke(); textAlign(CENTER, CENTER);
+            if (type === "Virus" && !virusImg) type = "Spore"; // fallback if image missing
+            switch (type) {
+                case "Bug":
+                    textSize(s * 1.2);
+                    text('🪰', x, y + s * 0.05);
+                    break;
+                case "Virus":
+                    image(virusImg, x - s / 2, y - s / 2, s, s);
+                    break;
+                case "Spore":
+                    circle(x, y, s);
+                    fill(255, 255, 255, 120); circle(x, y, s * 0.38);
+                    break;
+            }
+            pop();
+        }
+
+        function mousePressed() {
+            if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height && !finished) {
+                paused = !paused; setStatus(paused ? 'Paused' : 'Playing');
+            }
+        }
+    </script>
+</body>
+
+</html>
